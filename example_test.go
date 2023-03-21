@@ -1,35 +1,11 @@
 package zksnark_base
 
 import (
-	"crypto/rand"
-	"fmt"
 	"math/big"
 	"testing"
 
 	"github.com/cloudflare/bn256"
 )
-
-func TestGenerate(t *testing.T) {
-	p, err := rand.Prime(rand.Reader, 256)
-	if err != nil {
-		panic(err)
-	}
-
-	phi := new(big.Int).Sub(p, big.NewInt(1))
-
-	for {
-		g, err := rand.Int(rand.Reader, p)
-		if err != nil {
-			panic(err)
-		}
-
-		if new(big.Int).Exp(g, phi, p).Cmp(big.NewInt(1)) == 0 {
-			fmt.Println("p = " + p.String())
-			fmt.Println("g = " + g.String())
-			return
-		}
-	}
-}
 
 // test p = (x + 1) * (x + 2) * (x + 3) * (x + 4) = x^4 + 7x3 + 12x2 + 3x3 + 21x2 + 36x + 2x2 + 14x + 24
 // = x^4 + 10x^3 + 35x^2 + 50x + 24
