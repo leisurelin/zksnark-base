@@ -11,7 +11,7 @@ type (
 )
 ```
 
-That zkSNARKOP uses [Cloudflare bn256 Bilinear map implementation](https://github.com/cloudflare/bn256) there G2 is defined.
+That zkSNARKOP uses [Cloudflare bn256 Bilinear map implementation](https://github.com/cloudflare/bn256) where G2 is defined.
 Explore [Test example](./main_test.go) to see how t,h and p should be defined.
 
 Use `Setup(t T, n uint64) *SetupParams` method to generate SetupParams.
