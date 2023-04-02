@@ -2,8 +2,6 @@ package zksnark_base
 
 import (
 	"crypto/rand"
-	"encoding/json"
-	"fmt"
 	"math/big"
 )
 
@@ -14,13 +12,4 @@ func GetRandomWithMax(max *big.Int) *big.Int {
 	}
 
 	return val
-}
-
-func log(i interface{}) {
-	data, err := json.MarshalIndent(i, "", "")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(string(data))
 }
