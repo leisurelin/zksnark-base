@@ -7,57 +7,139 @@ import (
 	"github.com/cloudflare/bn256"
 )
 
-// test p = (x + 1) * (x + 2) * (x + 3) * (x + 4) = x^4 + 7x3 + 12x2 + 3x3 + 21x2 + 36x + 2x2 + 14x + 24
-// = x^4 + 10x^3 + 35x^2 + 50x + 24
+// TEST FUNCTION
+// f(w,a,b) = w? (a * b) : (a + b)
+// v = w(a*b) + (1-w) * (a+b)
+// m = a*b
+// v = w*m + (1-w) * (a+b)
 
-// t = (x + 1) * (x + 2) = x^2 + 3x + 2
-// h = (x + 3) * (x + 4) = x^2 + 7x + 12
+// Gates
+// a b w m v
 
-var testT = func(x *big.Int) *big.Int {
-	return new(big.Int).Mod(
-		new(big.Int).Mul(
-			new(big.Int).Add(x, big.NewInt(1)),
-			new(big.Int).Add(x, big.NewInt(2)),
-		),
-		bn256.Order,
-	)
+// Proof that we know 'a', such that f(1, a, 2) = 8
+// a = 4
+
+var inverse2 = new(big.Int).ModInverse(big.NewInt(2), bn256.Order)
+var inverse4 = new(big.Int).ModInverse(big.NewInt(4), bn256.Order)
+
+func f1(xi []*bn256.G1, c []*big.Int, inverse *big.Int) *bn256.G1 {
+	var e = make([]*bn256.G1, 3)
+	for i, val := range xi {
+		e[i] = new(bn256.G1).ScalarMult(val, c[i])
+	}
+
+	var res = e[0]
+	for i := 1; i < 3; i++ {
+		res = new(bn256.G1).Add(e[i], res)
+	}
+
+	if inverse == nil {
+		return res
+	}
+
+	return res.ScalarBaseMult(inverse)
 }
 
-var testH = func(x []*bn256.G2) *bn256.G2 {
-	var c = []*big.Int{big.NewInt(12), big.NewInt(7), big.NewInt(1), big.NewInt(0), big.NewInt(0)}
-	var e = make([]*bn256.G2, 0, 5)
-
-	for i, val := range x {
+func f2(xi []*bn256.G2, c []*big.Int, inverse *big.Int) *bn256.G2 {
+	var e = make([]*bn256.G2, 0, 3)
+	for i, val := range xi {
 		e = append(e, new(bn256.G2).ScalarMult(val, c[i]))
 	}
 
 	var res = e[0]
-	for i := 1; i < 5; i++ {
+	for i := 1; i < 3; i++ {
+		res = new(bn256.G2).Add(e[i], res)
+	}
+
+	if inverse == nil {
+		return res
+	}
+
+	return res.ScalarBaseMult(inverse)
+}
+
+func l1(xi []*bn256.G1) []*bn256.G1 {
+	la := f1(xi, []*big.Int{big.NewInt(6), big.NewInt(-5), big.NewInt(1)}, inverse2)
+	lw := f1(xi, []*big.Int{big.NewInt(-4), big.NewInt(5), big.NewInt(-1)}, inverse2)
+	return []*bn256.G1{la, nil, lw, nil, nil}
+}
+
+func l2(xi []*bn256.G2) []*bn256.G2 {
+	la := f2(xi, []*big.Int{big.NewInt(6), big.NewInt(-5), big.NewInt(1)}, inverse2)
+	lw := f2(xi, []*big.Int{big.NewInt(-4), big.NewInt(5), big.NewInt(-1)}, inverse2)
+	return []*bn256.G2{la, nil, lw, nil, nil}
+}
+
+func r2(xi []*bn256.G2) []*bn256.G2 {
+	ra := f2(xi, []*big.Int{big.NewInt(3), big.NewInt(-4), big.NewInt(1)}, nil)
+	rb := f2(xi, []*big.Int{big.NewInt(12), big.NewInt(-13), big.NewInt(3)}, inverse2)
+	rw := f2(xi, []*big.Int{big.NewInt(2), big.NewInt(-3), big.NewInt(1)}, inverse2)
+	rm := f2(xi, []*big.Int{big.NewInt(-3), big.NewInt(4), big.NewInt(-1)}, nil)
+	return []*bn256.G2{ra, rb, rw, rm, nil}
+}
+
+func o2(xi []*bn256.G2) []*bn256.G2 {
+	oa := f2(xi, []*big.Int{big.NewInt(3), big.NewInt(-4), big.NewInt(1)}, nil)
+	ob := f2(xi, []*big.Int{big.NewInt(3), big.NewInt(-4), big.NewInt(1)}, nil)
+	ow := f2(xi, []*big.Int{big.NewInt(2), big.NewInt(-3), big.NewInt(1)}, inverse2)
+	om := f2(xi, []*big.Int{big.NewInt(6), big.NewInt(-5), big.NewInt(1)}, inverse2)
+	ov := f2(xi, []*big.Int{big.NewInt(-3), big.NewInt(4), big.NewInt(-1)}, nil)
+	return []*bn256.G2{oa, ob, ow, om, ov}
+}
+
+// a b w m v
+var inputGates = []*big.Int{big.NewInt(4), big.NewInt(2), big.NewInt(1), big.NewInt(8), big.NewInt(8)}
+
+func big1(xi []*bn256.G1) *bn256.G1 {
+	var e = make([]*bn256.G1, 0, 5)
+	for i, val := range xi {
+		if val != nil {
+			e = append(e, new(bn256.G1).ScalarMult(val, inputGates[i]))
+		}
+	}
+
+	var res = e[0]
+	for i := 1; i < len(e); i++ {
+		res = new(bn256.G1).Add(e[i], res)
+	}
+
+	return res
+}
+
+func big2(xi []*bn256.G2) *bn256.G2 {
+	var e = make([]*bn256.G2, 0, 5)
+	for i, val := range xi {
+		if val != nil {
+			e = append(e, new(bn256.G2).ScalarMult(val, inputGates[i]))
+		}
+	}
+
+	var res = e[0]
+	for i := 1; i < len(e); i++ {
 		res = new(bn256.G2).Add(e[i], res)
 	}
 
 	return res
 }
 
-var testP = func(x []*bn256.G2) *bn256.G2 {
-	var c = []*big.Int{big.NewInt(24), big.NewInt(50), big.NewInt(35), big.NewInt(10), big.NewInt(1)}
-	var e = make([]*bn256.G2, 0, 5)
-
-	for i, val := range x {
+func h(xi []*bn256.G2) *bn256.G2 {
+	c := []*big.Int{big.NewInt(6), big.NewInt(-3), big.NewInt(0)}
+	var e = make([]*bn256.G2, 0, 3)
+	for i, val := range xi {
 		e = append(e, new(bn256.G2).ScalarMult(val, c[i]))
 	}
 
 	var res = e[0]
-	for i := 1; i < 5; i++ {
+	for i := 1; i < 3; i++ {
 		res = new(bn256.G2).Add(e[i], res)
 	}
 
-	return res
+	return res.ScalarBaseMult(inverse4)
 }
 
 func TestProving(_ *testing.T) {
-	params := Setup(testT, 4)
-	proof := MakeProof(params, testH, testP)
+	params := Setup(l1, l2, r2, o2, 3)
+	proof := MakeProof(params, big1, big2, big2, big2, h)
 
 	if err := VerifyProof(params, proof); err != nil {
 		panic(err)

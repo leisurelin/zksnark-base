@@ -75,19 +75,18 @@ func Setup(l1 L1, l2 L2, r R2, o O2, n uint64) *SetupParams {
 		panic(err)
 	}
 
-	g1_si := make([]*bn256.G1, 0, n+1)
-	g2_si := make([]*bn256.G2, 0, n+1)
-	g2_alphasi := make([]*bn256.G2, 0, n+1)
+	g1_si := make([]*bn256.G1, 0, n)
+	g2_si := make([]*bn256.G2, 0, n)
+	g2_alphasi := make([]*bn256.G2, 0, n)
 
-	for i := uint64(0); i <= n; i++ {
+	for i := uint64(0); i < n; i++ {
 		si := new(big.Int).Exp(s, new(big.Int).SetUint64(i), bn256.Order)
+
 		g1_si = append(g1_si, new(bn256.G1).ScalarMult(g1, si))
 		g2_si = append(g2_si, new(bn256.G2).ScalarMult(g2, si))
-	}
 
-	for i := uint64(0); i <= n; i++ {
-		si := new(big.Int).Exp(s, new(big.Int).SetUint64(i), bn256.Order)
 		alphasi := new(big.Int).Mod(new(big.Int).Mul(alpha, si), bn256.Order)
+
 		g2_alphasi = append(g2_alphasi, new(bn256.G2).ScalarMult(g2, alphasi))
 	}
 
