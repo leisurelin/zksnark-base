@@ -1,5 +1,7 @@
 # The zkSNARK repo on Golang
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## General
 
 The following implementation works over bn128 paring field. Explore [Cloudflare bn256 Bilinear map implementation](https://github.com/cloudflare/bn256) where the implementation is defined. 
