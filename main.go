@@ -85,8 +85,7 @@ func Setup(l1 L1, l2 L2, r R2, o O2, n uint64) *SetupParams {
 		g1_si = append(g1_si, new(bn256.G1).ScalarMult(g1, si))
 		g2_si = append(g2_si, new(bn256.G2).ScalarMult(g2, si))
 
-		alphasi := new(big.Int).Mod(new(big.Int).Mul(alpha, si), bn256.Order)
-
+		alphasi := mul(alpha, si)
 		g2_alphasi = append(g2_alphasi, new(bn256.G2).ScalarMult(g2, alphasi))
 	}
 
@@ -158,8 +157,24 @@ func t(x *big.Int, n uint64) *big.Int {
 	res := new(big.Int).SetUint64(1)
 
 	for i := uint64(1); i <= n; i++ {
-		res.Mul(res, new(big.Int).Sub(x, new(big.Int).SetUint64(i)))
+		res = mul(res, sub(x, new(big.Int).SetUint64(i)))
 	}
 
 	return res
+}
+
+func mul(a, b *big.Int) *big.Int {
+	return mod(new(big.Int).Mul(a, b))
+}
+
+func sub(a, b *big.Int) *big.Int {
+	return mod(new(big.Int).Sub(a, b))
+}
+
+func add(a, b *big.Int) *big.Int {
+	return mod(new(big.Int).Sub(a, b))
+}
+
+func mod(v *big.Int) *big.Int {
+	return new(big.Int).Mod(v, bn256.Order)
 }
